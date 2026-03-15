@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>مسابقة الكويز</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #22d3ee;
+      --accent: #f43f5e;
+      --bg: #0f172a;
+      --card: #1e293b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      box-shadow: 0 20px 50px -15px #000c;
+    }
+    h1 { font-size: 2.4rem; margin-bottom: 1.8rem; }
+    input {
+      width: 100%;
+      padding: 1.1rem;
+      font-size: 1.3rem;
+      border-radius: 12px;
+      border: 2px solid #334155;
+      background: #0f172a;
+      color: white;
+      margin-bottom: 1.2rem;
+      text-align: center;
+    }
+    .btn {
+      width: 100%;
+      padding: 1.2rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn-join { background: var(--primary); color: #0f172a; }
+    .btn-join:active { transform: scale(0.97); }
+
+    #waiting { display: none; flex-direction: column; align-items: center; gap: 2rem; }
+    .pulse { font-size: 5rem; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.15);} }
+
+    #question-screen { display: none; }
+    .timer {
+      font-size: 4.5rem;
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    #qcounter { font-size: 1.4rem; color: #94a3b8; margin-bottom: 1.5rem; }
+
+    .options {
+      display: grid;
+      gap: 1.2rem;
+      margin: 2rem 0;
+    }
+    .opt-btn {
+      padding: 1.4rem;
+      font-size: 1.3rem;
+      background: #0f3460;
+      border: 2px solid var(--primary);
+      border-radius: 14px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .opt-btn:hover { background: rgba(34,211,238,0.15); }
+    .opt-btn.selected {
+      background: var(--primary);
+      color: #0f172a;
+      border-color: var(--primary);
+    }
+    .opt-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #feedback { display:none; margin-top:2rem; font-size:1.3rem; color:var(--primary); font-weight:600; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <div id="login">
+    <h1>التحدي الكبير</h1>
+    <input type="text" id="username" placeholder="اكتب اسمك..." maxlength="16" autocomplete="off">
+    <button class="btn btn-join" id="btn-join">انضمام</button>
+  </div>
+
+  <div id="waiting" style="display:none">
+    <div class="pulse">⚡</div>
+    <h2>جاهز يا <span id="myname"></span>؟</h2>
+    <p>المسابقة ستبدأ قريباً...</p>
+  </div>
+
+  <div id="question-screen">
+    <div class="timer" id="timer">--</div>
+    <div id="qcounter">السؤال …</div>
+    <h2 id="qtext">جاري التحميل...</h2>
+    <div class="options" id="options"></div>
+    <div id="feedback">تم تسجيل إجابتك ✓</div>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+const login      = document.getElementById('login');
+const waiting    = document.getElementById('waiting');
+const qscreen    = document.getElementById('question-screen');
+const btnJoin    = document.getElementById('btn-join');
+const username   = document.getElementById('username');
+const myname     = document.getElementById('myname');
+const timerEl    = document.getElementById('timer');
+const qtext      = document.getElementById('qtext');
+const options    = document.getElementById('options');
+const feedback   = document.getElementById('feedback');
+
+let timerInterval;
+
+btnJoin.onclick = () => {
+  const name = username.value.trim();
+  if (name.length < 2) return alert("الاسم قصير جداً");
+
+  socket.emit('join-game', name);
+  myname.textContent = name;
+  login.style.display = 'none';
+  waiting.style.display = 'flex';
+};
+
+socket.on('next-question', data => {
+  waiting.style.display = 'none';
+  qscreen.style.display = 'block';
+  feedback.style.display = 'none';
+
+  qtext.textContent = data.question.text;
+  document.getElementById('qcounter').textContent = `س ${data.index+1} / ${data.total}`;
+
+  options.innerHTML = data.question.options.map((txt,i) => `
+    <button class="opt-btn" data-i="${i}">${txt}</button>
+  `).join('');
+
+  startClientTimer(data.timer);
+});
+
+function startClientTimer(sec) {
+  clearInterval(timerInterval);
+  let t = sec;
+  timerEl.textContent = t;
+
+  timerInterval = setInterval(() => {
+    t--;
+    timerEl.textContent = t;
+    if (t <= 0) {
+      clearInterval(timerInterval);
+      disableOptions();
+    }
+  }, 1000);
+}
+
+options.addEventListener('click', e => {
+  if (!e.target.matches('.opt-btn')) return;
+  if (e.target.disabled) return;
+
+  const idx = e.target.dataset.i;
+  socket.emit('submit-answer', idx);
+
+  // UI feedback immédiat
+  [...options.children].forEach(b => {
+    b.disabled = true;
+    if (b.dataset.i === idx) b.classList.add('selected');
+  });
+
+  feedback.style.display = 'block';
+});
+
+function disableOptions() {
+  [...options.children].forEach(b => b.disabled = true);
+}
+</script>
+</body>
+</html>

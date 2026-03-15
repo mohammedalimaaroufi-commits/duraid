@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>كويز ماستر برو - لوحة التحكم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #22d3ee;
+      --primary-dark: #0891b2;
+      --accent: #f43f5e;
+      --gold: #fbbf24;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Cairo', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 800;
+    }
+
+    h1 span { color: var(--primary); }
+
+    .status-online {
+      background: rgba(34,211,238,0.15);
+      color: var(--primary);
+      padding: 0.5rem 1.2rem;
+      border-radius: 999px;
+      font-weight: 600;
+      border: 1px solid var(--primary);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 1.8rem;
+      margin-bottom: 1.8rem;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.4);
+    }
+
+    h2, h3 { margin-bottom: 1.2rem; }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.6rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    input[type="file"], input[type="number"] {
+      width: 100%;
+      padding: 0.9rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: white;
+      font-size: 1rem;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-weight: 700;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.25s;
+      border: none;
+      font-size: 1.1rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #0f172a;
+    }
+
+    .btn-primary:hover { filter: brightness(1.1); }
+
+    .btn-start {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+      font-size: 1.3rem;
+      padding: 1.2rem 3rem;
+    }
+
+    .btn-start:not(:disabled):hover {
+      background: var(--primary);
+      color: #0f172a;
+    }
+
+    .btn-gold {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(251,191,36,0.1);
+    }
+
+    .control-bar {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .live {
+      color: var(--accent);
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .blink { animation: blink 1.4s infinite; }
+    @keyframes blink { 50% { opacity: 0.3; } }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.8rem;
+    }
+
+    .question-preview {
+      background: #0f172a;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1rem 0;
+    }
+
+    #display-q-text {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .options-preview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .opt {
+      padding: 1.1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border-right: 4px solid var(--primary);
+    }
+
+    .opt.correct {
+      background: rgba(34,211,238,0.25);
+      border-color: var(--gold);
+    }
+
+    #admin-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 5rem;
+      color: var(--accent);
+      text-align: center;
+      margin: 1rem 0;
+      text-shadow: 0 0 30px rgba(244,63,94,0.4);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: right;
+    }
+
+    th { color: var(--text-muted); }
+
+    tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+
+    .podium-grid {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 2rem;
+      min-height: 400px;
+      margin: 3rem 0;
+    }
+
+    .podium-step {
+      background: rgba(255,255,255,0.08);
+      border-radius: 16px 16px 0 0;
+      padding: 1.5rem;
+      text-align: center;
+      width: 220px;
+      transition: transform 0.4s;
+    }
+
+    .rank-1 { height: 420px; border-top: 6px solid var(--gold); }
+    .rank-2 { height: 320px; border-top: 6px solid #cbd5e1; }
+    .rank-3 { height: 240px; border-top: 6px solid #d97706; }
+
+    .podium-name { font-size: 1.6rem; font-weight: 700; margin: 0.8rem 0; }
+    .podium-score { font-size: 2.2rem; color: var(--primary); }
+
+    @media (max-width: 900px) {
+      .dashboard-grid, .setup-grid { grid-template-columns: 1fr; }
+      .podium-grid { flex-direction: column; align-items: center; }
+      .podium-step { width: 80%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <h1>لوحة <span>التحكم</span></h1>
+    <div class="status-online">● متصل</div>
+  </header>
+
+  <section id="setup-section">
+    <div class="card">
+      <h2>إعدادات المسابقة</h2>
+      <div class="setup-grid">
+        <div>
+          <label>ملف الأسئلة (JSON)</label>
+          <input type="file" id="file-input" accept=".json">
+        </div>
+        <div>
+          <label>مدة كل سؤال (ثوانٍ)</label>
+          <input type="number" id="timer-input" value="15" min="5" max="90">
+        </div>
+      </div>
+      <button id="btn-setup" class="btn btn-primary">تحميل الأسئلة وبدء الجلسة</button>
+    </div>
+  </section>
+
+  <section id="dashboard" style="display:none">
+    <div class="control-bar">
+      <button id="btn-start" class="btn btn-start">إطلاق المسابقة</button>
+      <button id="btn-present" class="btn btn-start">🎥 عرض على شاشة كبيرة</button>
+      <div class="live"><span class="blink">●</span> مباشر</div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="card">
+        <h3>السؤال الحالي</h3>
+        <div id="admin-timer">--</div>
+
+        <div class="question-preview" id="active-question" style="display:none">
+          <div id="display-q-text">جاري التحميل...</div>
+          <div class="options-preview" id="display-options"></div>
+
+          <div id="reveal-box" style="margin-top:2rem; display:none; text-align:center; padding:1.5rem; background:rgba(34,211,238,0.15); border-radius:12px; border:2px solid var(--primary)">
+            <div style="color:var(--gold); font-size:1.4rem; font-weight:700; margin-bottom:0.8rem;">الإجابة الصحيحة</div>
+            <div id="answer-text" style="font-size:1.6rem">--</div>
+          </div>
+        </div>
+
+        <div style="margin-top:2rem">
+          <h4>اللاعبون المتصلون (<span id="player-count">0</span>)</h4>
+          <div id="player-list" style="display:flex; flex-wrap:wrap; gap:0.6rem; margin-top:1rem;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>الترتيب الحالي</h3>
+        <table>
+          <thead>
+            <tr><th>المركز</th><th>الاسم</th><th>النقاط</th></tr>
+          </thead>
+          <tbody id="leaderboard-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="podium" style="display:none">
+    <div class="card" style="text-align:center">
+      <h1 style="font-size:3.5rem; color:var(--gold); margin:2rem 0">🏆 الأبطال 🏆</h1>
+      <div class="podium-grid" id="podium-display"></div>
+      <button onclick="location.reload()" class="btn btn-primary" style="font-size:1.4rem; padding:1.2rem 4rem; margin-top:3rem;">
+        مسابقة جديدة
+      </button>
+    </div>
+  </section>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ────────────────────────────────────────────────
+const socket = io();
+
+let questions = [];
+let currentIndex = 0;
+let timerId = null;
+let leaderboardCache = [];
+
+// Elements
+const setupSection   = document.getElementById('setup-section');
+const dashboard      = document.getElementById('dashboard');
+const podiumSection  = document.getElementById('podium');
+const btnSetup       = document.getElementById('btn-setup');
+const btnStart       = document.getElementById('btn-start');
+const btnPresent     = document.getElementById('btn-present');
+const fileInput      = document.getElementById('file-input');
+const timerInput     = document.getElementById('timer-input');
+
+// 1. Charger questions
+btnSetup.onclick = () => {
+  const file = fileInput.files[0];
+  if (!file) return alert("اختر ملف JSON أولاً");
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      questions = JSON.parse(e.target.result);
+      if (!Array.isArray(questions) || questions.length === 0) throw new Error();
+      setupSection.style.display = 'none';
+      dashboard.style.display = 'block';
+    } catch {
+      alert("الملف تالف أو ليس بتنسيق JSON صحيح");
+    }
+  };
+  reader.readAsText(file);
+};
+
+// 2. Lancer question / podium
+btnStart.onclick = () => {
+  if (btnStart.dataset.action === "podium") {
+    showPodium();
+    return;
+  }
+  if (currentIndex >= questions.length) return;
+  sendNextQuestion();
+};
+
+btnPresent.onclick = () => {
+  window.open('presenter.html', '_blank', 'fullscreen=yes');
+};
+
+function sendNextQuestion() {
+  btnStart.disabled = true;
+  document.getElementById('reveal-box').style.display = 'none';
+  document.getElementById('active-question').style.display = 'block';
+
+  const q = questions[currentIndex];
+  const seconds = parseInt(timerInput.value) || 15;
+
+  document.getElementById('display-q-text').textContent = q.text;
+  document.getElementById('display-options').innerHTML = q.options
+    .map((txt,i) => `<div class="opt" id="opt${i}">${txt}</div>`)
+    .join('');
+
+  socket.emit('send-question', { question: q, timer: seconds, index: currentIndex, total: questions.length });
+
+  runTimer(seconds, q);
+}
+
+function runTimer(sec, question) {
+  let t = sec;
+  const el = document.getElementById('admin-timer');
+  el.textContent = t;
+
+  if (timerId) clearInterval(timerId);
+  timerId = setInterval(() => {
+    t--;
+    el.textContent = t;
+    if (t <= 0) {
+      clearInterval(timerId);
+      setTimeout(() => revealAnswer(question), 5000);
+    }
+  }, 1000);
+}
+
+function revealAnswer(q) {
+  const idx = q.answer;
+  document.getElementById('answer-text').textContent = q.options[idx];
+  document.getElementById('reveal-box').style.display = 'block';
+
+  const correctEl = document.getElementById(`opt${idx}`);
+  if (correctEl) correctEl.classList.add('correct');
+
+  currentIndex++;
+
+  if (currentIndex < questions.length) {
+    btnStart.disabled = false;
+    btnStart.textContent = `السؤال التالي (${currentIndex+1})`;
+  } else {
+    btnStart.textContent = "عرض المنصة النهائية 🏆";
+    btnStart.dataset.action = "podium";
+    btnStart.classList.add('btn-gold');
+  }
+}
+
+function showPodium() {
+  if (leaderboardCache.length === 0) {
+    alert("لا يوجد لاعبون بعد");
+    return;
+  }
+
+  dashboard.style.display = 'none';
+  podiumSection.style.display = 'block';
+
+  const order = [1,0,2]; // 2e – 1er – 3e
+  const container = document.getElementById('podium-display');
+  container.innerHTML = '';
+
+  order.forEach(pos => {
+    const p = leaderboardCache[pos];
+    if (!p) {
+      container.innerHTML += '<div class="podium-step"></div>';
+      return;
+    }
+    container.innerHTML += `
+      <div class="podium-step rank-${pos+1}">
+        <div class="podium-name">${p.name}</div>
+        <div class="podium-score">${p.score}</div>
+      </div>
+    `;
+  });
+}
+
+// ── Socket events ───────────────────────────────────
+socket.on('update-player-list', players => {
+  document.getElementById('player-count').textContent = players.length;
+  document.getElementById('player-list').innerHTML = players
+    .map(p => `<span style="background:rgba(34,211,238,0.15); padding:0.5rem 1rem; border-radius:999px; border:1px solid var(--primary);">${p.name}</span>`)
+    .join('');
+});
+
+socket.on('update-leaderboard', lb => {
+  leaderboardCache = lb;
+  const tbody = document.getElementById('leaderboard-body');
+  tbody.innerHTML = lb.map((p,i) => `
+    <tr style="${i===0?'background:rgba(251,191,36,0.12);':''}">
+      <td>${i+1}</td>
+      <td>${p.name}</td>
+      <td style="font-weight:700">${p.score}</td>
+    </tr>
+  `).join('');
+});
+</script>
+</body>
+</html>

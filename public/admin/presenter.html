@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>شاشة المسابقة - كويز ماستر برو</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #020617;
+      --primary: #22d3ee;
+      --accent: #f43f5e;
+      --gold: #fbbf24;
+      --silver: #cbd5e1;
+      --bronze: #d97706;
+      --text: #f8fafc;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Cairo', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 2vh 5vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+      font-size: 3.5vw;
+      font-weight: 900;
+      z-index: 30;
+    }
+
+    #live-players {
+      font-size: 3.2vw;
+      color: var(--primary);
+      font-weight: 700;
+      background: rgba(34,211,238,0.15);
+      padding: 1vh 2vw;
+      border-radius: 12px;
+      border: 1px solid rgba(34,211,238,0.4);
+    }
+
+    #timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16vw;
+      font-weight: 900;
+      color: var(--accent);
+      text-shadow: 0 0 60px rgba(244,63,94,0.8);
+      min-width: 28vw;
+      text-align: center;
+      transition: all 0.4s;
+    }
+
+    #timer.critical {
+      color: #ff4444;
+      animation: pulse 1s infinite;
+    }
+
+    main {
+      flex: 1;
+      position: relative;
+    }
+
+    .fullscreen-state {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 4vh 5vw;
+      text-align: center;
+      transition: opacity 0.8s ease;
+    }
+
+    /* Écran attente joueurs */
+    #waiting-screen {
+      background: rgba(2,6,23,0.94);
+      z-index: 10;
+    }
+
+    .title-waiting {
+      font-size: 9vw;
+      color: var(--primary);
+      margin-bottom: 7vh;
+      text-shadow: 0 0 50px rgba(34,211,238,0.8);
+      animation: glow 4s infinite alternate;
+    }
+
+    .players-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 5vh 7vw;
+      width: 100%;
+      max-width: 1800px;
+      padding: 0 5vw;
+    }
+
+    .player-card {
+      background: rgba(34,211,238,0.15);
+      backdrop-filter: blur(16px);
+      border: 3px solid rgba(34,211,238,0.5);
+      border-radius: 24px;
+      padding: 4vh 5vw;
+      font-size: 5vw;
+      font-weight: 800;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+      animation: slideIn 1.1s ease-out forwards;
+      opacity: 0;
+      transform: translateY(80px);
+    }
+
+    .waiting-message {
+      margin-top: 10vh;
+      font-size: 5.5vw;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+
+    /* Écran classement (après fin du temps) */
+    #leaderboard-screen {
+      background: rgba(2,6,23,0.94);
+      z-index: 15;
+    }
+
+    .title-leaderboard {
+      font-size: 9vw;
+      color: var(--gold);
+      margin-bottom: 7vh;
+      text-shadow: 0 0 50px rgba(251,191,36,0.8);
+    }
+
+    .podium-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 6vw;
+      width: 100%;
+      max-width: 1800px;
+      height: 70vh;
+    }
+
+    .podium-step {
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px 20px 0 0;
+      padding: 4vh 5vw;
+      text-align: center;
+      width: 30vw;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      border-top: 10px solid;
+      animation: growUp 1.6s ease-out forwards;
+    }
+
+    .podium-step.rank-1 { border-top-color: var(--gold);    height: 100%; }
+    .podium-step.rank-2 { border-top-color: var(--silver);  height: 80%; }
+    .podium-step.rank-3 { border-top-color: var(--bronze);  height: 60%; }
+
+    .podium-name {
+      font-size: 5vw;
+      font-weight: 900;
+      margin-bottom: 2vh;
+    }
+
+    .podium-score {
+      font-size: 8.5vw;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--primary);
+      font-weight: 900;
+    }
+
+    /* Écran question */
+    #question-screen {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 8vh;
+    }
+
+    #question {
+      font-size: 7.5vw;
+      font-weight: 900;
+      line-height: 1.2;
+      max-width: 95vw;
+      text-shadow: 0 10px 40px rgba(0,0,0,0.9);
+    }
+
+    #options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5vh 8vw;
+      width: 100%;
+      max-width: 1600px;
+    }
+
+    .opt {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(16px);
+      border: 6px solid transparent;
+      border-radius: 32px;
+      padding: 6vh 6vw;
+      font-size: 5vw;
+      font-weight: 800;
+      text-align: center;
+      box-shadow: 0 12px 50px rgba(0,0,0,0.7);
+      transition: all 0.5s ease;
+    }
+
+    .opt.correct {
+      background: linear-gradient(135deg, var(--primary), #0891b2);
+      color: #0f172a;
+      border-color: var(--gold);
+      transform: scale(1.08);
+      box-shadow: 0 0 100px rgba(34,211,238,0.7);
+    }
+
+    footer {
+      position: fixed;
+      bottom: 3vh;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 3vw;
+      opacity: 0.8;
+      font-weight: 600;
+      z-index: 5;
+    }
+
+    @keyframes pulse  { 0%,100% {opacity:0.7; transform:scale(1);} 50% {opacity:1; transform:scale(1.05);} }
+    @keyframes glow   { from {text-shadow:0 0 25px rgba(34,211,238,0.5);} to {text-shadow:0 0 70px rgba(34,211,238,1);} }
+    @keyframes slideIn { from {opacity:0; transform:translateY(100px);} to {opacity:1; transform:translateY(0);} }
+    @keyframes growUp  { from {height:0; opacity:0; transform:translateY(140px);} to {height:var(--h); opacity:1; transform:translateY(0);} }
+
+    @media (max-width: 768px) {
+      #options { grid-template-columns: 1fr; gap: 5vh; }
+      #question, .opt { font-size: 9vw; }
+      .player-card, .podium-name { font-size: 7vw; }
+      .podium-score { font-size: 12vw; }
+      .podium-container { height: 60vh; gap: 4vw; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>كويز ماستر برو</div>
+  <div id="live-players">المتسابقون: <span id="player-count">0</span></div>
+  <div id="timer">--</div>
+</header>
+
+<main>
+  <!-- 1. Écran joueurs connectés (avant première question) -->
+  <div id="waiting-screen" class="fullscreen-state">
+    <h1 class="title-waiting">المتسابقون المتصلون</h1>
+    <div id="players-grid" class="players-grid"></div>
+    <div class="waiting-message">في انتظار إطلاق المسابقة من طرف المشرف...</div>
+  </div>
+
+  <!-- 2. Écran classement temporaire (juste après fin du temps / révélation) -->
+  <div id="leaderboard-screen" class="fullscreen-state" style="display:none;">
+    <h1 class="title-leaderboard">الترتيب الحالي</h1>
+    <div id="podium-container" class="podium-container"></div>
+  </div>
+
+  <!-- 3. Écran question -->
+  <div id="question-screen" class="fullscreen-state" style="display:none;">
+    <div id="loading" style="display:none;">جاري التحميل...</div>
+    <div id="question">في انتظار السؤال الأول...</div>
+    <div id="options"></div>
+  </div>
+</main>
+
+<footer>
+  السؤال <span id="qnum">–</span> / <span id="qtotal">–</span>
+</footer>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ────────────────────────────────────────────────
+const socket = io();
+
+const timerEl         = document.getElementById('timer');
+const qEl             = document.getElementById('question');
+const optsEl          = document.getElementById('options');
+const qnumEl          = document.getElementById('qnum');
+const qtotalEl        = document.getElementById('qtotal');
+const loadingEl       = document.getElementById('loading');
+const waitingScreen   = document.getElementById('waiting-screen');
+const questionScreen  = document.getElementById('question-screen');
+const leaderboardScreen = document.getElementById('leaderboard-screen');
+const playersGrid     = document.getElementById('players-grid');
+const podiumContainer = document.getElementById('podium-container');
+const playerCountEl   = document.getElementById('player-count');
+
+let countdown = null;
+let currentQuestionData = null;
+
+// ── Connexion + demandes initiales ────────────────────────────────
+socket.on('connect', () => {
+  console.log('Socket connecté → ID:', socket.id);
+  socket.emit('request-current-question');
+  socket.emit('request-player-list');      // Demande immédiate joueurs
+});
+
+// ── Mise à jour liste joueurs (toujours visible via compteur) ─────
+socket.on('update-player-list', (players) => {
+  playerCountEl.textContent = players.length || 0;
+
+  // Affichage grille animée seulement en mode attente
+  if (questionScreen.style.display !== 'flex' && leaderboardScreen.style.display !== 'flex') {
+    waitingScreen.style.display = 'flex';
+    playersGrid.innerHTML = players.map((p, i) => `
+      <div class="player-card" style="animation-delay: ${i * 0.12}s;">
+        ${p.name}
+      </div>
+    `).join('');
+  }
+});
+
+// ── Nouvelle question arrive ────────────────────────────────────
+socket.on('next-question', (data) => {
+  console.log('next-question reçu :', data);
+
+  currentQuestionData = data;
+
+  if (!data) {
+    waitingScreen.style.display = 'flex';
+    questionScreen.style.display = 'none';
+    leaderboardScreen.style.display = 'none';
+    return;
+  }
+
+  // Afficher question → cacher classement et attente
+  waitingScreen.style.display = 'none';
+  leaderboardScreen.style.display = 'none';
+  questionScreen.style.display = 'flex';
+
+  loadingEl.style.display = 'none';
+  qEl.textContent = data.question.text || 'سؤال غير متوفر';
+  qnumEl.textContent = (data.index ?? 0) + 1;
+  qtotalEl.textContent = data.total ?? '?';
+
+  optsEl.innerHTML = (data.question.options || []).map((text, i) => `
+    <div class="opt" data-i="${i}">${text}</div>
+  `).join('');
+
+  let timeLeft = Number(data.timer) || 15;
+  timerEl.textContent = timeLeft;
+  timerEl.classList.remove('critical');
+
+  clearInterval(countdown);
+  countdown = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+    if (timeLeft <= 6) timerEl.classList.add('critical');
+    if (timeLeft <= 0) {
+      clearInterval(countdown);
+      timerEl.textContent = '0';
+    }
+  }, 1000);
+});
+
+// ── Révélation de la bonne réponse ───────────────────────────────
+socket.on('reveal-answer', (correctIndex) => {
+  console.log('reveal-answer reçu → index :', correctIndex);
+
+  document.querySelectorAll('.opt').forEach(el => {
+    if (Number(el.dataset.i) === correctIndex) {
+      el.classList.add('correct');
+    }
+  });
+
+  // Après 5 secondes → afficher classement (meilleur UX)
+  setTimeout(() => {
+    socket.emit('request-leaderboard');
+  }, 5000);
+});
+
+// ── Affichage classement temporaire (juste après fin temps / reveal) ──
+socket.on('update-leaderboard', (leaderboard) => {
+  const top3 = leaderboard.slice(0, 3);
+  if (top3.length === 0) return;
+
+  questionScreen.style.display = 'none';
+  waitingScreen.style.display = 'none';
+  leaderboardScreen.style.display = 'flex';
+
+  podiumContainer.innerHTML = '';
+
+  const order = [1, 0, 2]; // 2e - 1er - 3e
+  order.forEach((pos, visualRank) => {
+    const player = top3[pos];
+    if (!player) return;
+
+    const step = document.createElement('div');
+    step.className = `podium-step rank-${visualRank + 1}`;
+    step.innerHTML = `
+      <div class="podium-name">${player.name}</div>
+      <div class="podium-score">${player.score}</div>
+    `;
+    podiumContainer.appendChild(step);
+  });
+
+  // Le classement disparaît automatiquement avec la prochaine question
+});
+
+// ── Nouvelle question → cacher classement immédiatement ──────────
+socket.on('next-question', () => {
+  leaderboardScreen.style.display = 'none';
+});
+
+// Sécurité : si classement reste trop longtemps (rare)
+setInterval(() => {
+  if (leaderboardScreen.style.display === 'flex' && !currentQuestionData) {
+    leaderboardScreen.style.display = 'none';
+    waitingScreen.style.display = 'flex';
+  }
+}, 15000);
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كويز ماستر برو - لوحة التحكم</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="admin-container">
+        <header class="main-header">
+            <div class="logo-area">
+                <span class="status-dot"></span>
+                <h1>لوحة <span>التحكم</span></h1>
+            </div>
+            <div id="connection-status" class="status-online">الخادم متصل</div>
+        </header>
+
+        <section id="settings-section">
+            <div class="glass-card config-box">
+                <h2><span class="icon">⚙️</span> إعدادات اللعبة</h2>
+                <div class="config-grid">
+                    <div class="form-group">
+                        <label for="file-input">بنك الأسئلة (ملف JSON)</label>
+                        <input type="file" id="file-input" accept=".json">
+                        <small>قم بسحب وإفلات ملف الأسئلة هنا</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="timer-input">مؤقت السؤال (بالثواني)</label>
+                        <input type="number" id="timer-input" value="15" min="5" max="120">
+                    </div>
+                </div>
+                <button id="btn-setup" class="btn-primary-glow">تأكيد الإعدادات وبدء الجلسة</button>
+            </div>
+        </section>
+
+        <section id="dashboard-section" style="display:none;">
+            <div class="control-header">
+                <button id="btn-start" class="btn-success-cinematic">إطلاق المسابقة</button>
+                
+                <div class="live-indicator">
+                    <span class="blink">●</span> مباشر
+                </div>
+            </div>
+
+            <div class="admin-grid">
+                <div class="game-monitor card">
+                    <div class="card-header"><h3>شاشة المراقبة الفورية</h3></div>
+                    <div id="active-question-container" style="display:none;">
+                        <div class="hud-timer">الوقت: <span id="admin-timer">--</span> ثانية</div>
+                        <div class="question-preview-box">
+                            <h4 id="display-q-text">جاري تحميل السؤال...</h4>
+                            <div id="display-options" class="options-preview-grid"></div>
+                        </div>
+                        <div id="correct-answer-alert" class="reveal-box" style="display:none;">
+                            <span class="reveal-label">الإجابة الصحيحة</span>
+                            <div id="answer-text">--</div>
+                        </div>
+                    </div>
+                    <div class="players-info">
+                        <h4>المتسابقون المتصلون: <span id="player-count">0</span></h4>
+                        <ul id="player-list" class="badge-list"></ul>
+                    </div>
+                </div>
+
+                <div class="leaderboard-container card">
+                    <div class="card-header"><h3>الترتيب العام</h3></div>
+                    <div class="table-wrapper">
+                        <table id="leaderboard-table">
+                            <thead>
+                                <tr><th>الرتبة</th><th>المتسابق</th><th>النقاط</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="podium-section" style="display:none;">
+            <div class="glass-card podium-wrapper">
+                <h1 class="podium-title">🏆 أبطال المسابقة 🏆</h1>
+                <div id="podium-display" class="podium-grid"></div>
+                <button onclick="location.reload()" class="btn-primary-glow" style="margin-top: 40px; width: auto; padding: 15px 60px;">مسابقة جديدة</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
