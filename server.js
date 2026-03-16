@@ -11,19 +11,8 @@ const io = new Server(httpServer, {
   cors: { origin: "*" } // À sécuriser en production → limiter les origines
 });
 
-// 1. قم بتغيير هذا السطر ليعمل من المجلد الرئيسي مباشرة
-app.use(express.static(__dirname)); 
+app.use(express.static(path.join(__dirname, 'public')));
 
-// 2. أضف هذا المسار للتأكد من أن الصفحة الرئيسية تفتح دائماً
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// 3. تأكد من أن المنفذ يقرأ إعدادات Koyeb (المنفذ 8000)
-const PORT = process.env.PORT || 8000; 
-httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`Serveur Quiz démarré sur port ${PORT}`);
-});
 // ────────────────────────────────────────────────
 // État global du jeu
 const gameState = {
