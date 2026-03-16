@@ -11,10 +11,10 @@ const io = new Server(httpServer, {
   cors: { origin: "*" } 
 });
 
-// 1. إعداد المجلد العام للملفات الساكنة (CSS, JS, Images)
+// 1. إعداد المجلد العام (هذا يجعل أي ملف داخل public متاحاً للتحميل)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 2. تعريف المسارات (Routes) للوصول للصفحات من المجلدات الفرعية
+// 2. حل مشكلة الـ 404 بتعريف المسارات الدقيقة
 // رابط الطلاب (Candidat)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/candidat/index.html'));
@@ -25,14 +25,13 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/admin/admin.html'));
 });
 
-// رابط شاشة العرض الكبيرة (Presenter)
+// رابط شاشة العرض (Presenter)
 app.get('/presenter', (req, res) => {
-  // إذا كان الملف داخل public مباشرة أو داخل مجلد فرعي، تأكد من المسار هنا
   res.sendFile(path.join(__dirname, 'public/presenter.html'));
 });
 
 // ────────────────────────────────────────────────
-// الحالة العامة للعبة (GameState)
+// الحالة العامة للعبة
 const gameState = {
   currentQuestion: null,
   questionStartTime: 0,
@@ -69,7 +68,7 @@ function broadcastGameState() {
 
 // ────────────────────────────────────────────────
 io.on('connection', (socket) => {
-  console.log(`[متصل] ${socket.id}`);
+  console.log(`[اتصال] ${socket.id}`);
 
   if (gameState.currentQuestion) {
     socket.emit('next-question', gameState.currentQuestion);
@@ -79,77 +78,59 @@ io.on('connection', (socket) => {
   }
   broadcastGameState();
 
-  // انضمام لاعب
   socket.on('join-game', (name) => {
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      socket.emit('error', 'الاسم غير صالح');
+      socket.emit('error', 'الاسم قصير جداً');
       return;
     }
     const cleanName = name.trim().slice(0, 20);
     gameState.players = gameState.players.filter(p => p.id !== socket.id);
     gameState.players.push({ id: socket.id, name: cleanName, score: 0, answered: false });
-    
     broadcastPlayersList();
     broadcastLeaderboard();
     broadcastGameState();
   });
 
-  // إرسال سؤال
   socket.on('send-question', (data) => {
     if (!data?.question?.text) return;
-
     gameState.currentQuestion = {
       question: data.question,
       timer: Number(data.timer) || 15,
       index: data.index,
       total: data.total
     };
-
     gameState.questionStartTime = Date.now();
     gameState.currentQuestionIndex = data.index;
     gameState.status = 'playing';
     gameState.revealedAnswer = null;
-
     gameState.players.forEach(p => p.answered = false);
     gameState.answers.clear();
-
     io.emit('next-question', gameState.currentQuestion);
     broadcastGameState();
   });
 
-  // كشف الإجابة
   socket.on('reveal-answer', () => {
     if (!gameState.currentQuestion || gameState.status !== 'playing') return;
-
     gameState.revealedAnswer = gameState.currentQuestion.question.answer;
     gameState.status = 'revealing';
-
     io.emit('reveal-answer', gameState.revealedAnswer);
     broadcastLeaderboard();
     broadcastGameState();
   });
 
-  // استقبال الإجابات
   socket.on('submit-answer', (choiceIndex) => {
     const player = gameState.players.find(p => p.id === socket.id);
     if (!player || gameState.status !== 'playing' || player.answered) return;
-
     const isCorrect = Number(choiceIndex) === gameState.currentQuestion?.question?.answer;
-
     if (isCorrect) {
       const elapsed = (Date.now() - gameState.questionStartTime) / 1000;
       const maxTime = gameState.currentQuestion.timer;
       const timeBonus = Math.max(0, Math.round((maxTime - elapsed) * 10));
       player.score += 100 + timeBonus;
     }
-
     player.answered = true;
     gameState.answers.set(socket.id, Number(choiceIndex));
     broadcastLeaderboard();
-  });
-
-  socket.on('request-leaderboard', () => {
-    socket.emit('update-leaderboard', getSortedLeaderboard());
   });
 
   socket.on('disconnect', () => {
@@ -162,8 +143,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// 3. تشغيل الخادم على منفذ Koyeb (8000) أو المنفذ الديناميكي
+// 3. المنفذ الخاص بـ Koyeb
 const PORT = process.env.PORT || 8000;
 httpServer.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 السيرفر جاهز على المنفذ ${PORT}`);
+  console.log(`🚀 السيرفر يعمل الآن على المنفذ ${PORT}`);
 });
