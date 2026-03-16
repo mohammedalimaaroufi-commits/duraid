@@ -30,6 +30,13 @@ app.get('/presenter', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/presenter.html'));
 });
 
+// في ملف server.js
+socket.on('admin-restart-server', () => { process.exit(0); });
+socket.on('admin-reset-game', () => { 
+    players = []; 
+    io.emit('force-reload'); 
+});
+
 // ────────────────────────────────────────────────
 // الحالة العامة للعبة (保持 الحالة كما هي لضمان عمل الوظائف)
 const gameState = {
